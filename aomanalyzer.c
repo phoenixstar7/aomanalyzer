@@ -252,10 +252,56 @@ int print_list(char *buffer, const char **list) {
     buf += sprintf(buf, "\"%s\"", *name);
     name++;
     if (*name != NULL) {
-      buf += sprintf(buf, ", ");
+      *(buf ++) = ',';
     }
   }
   return buf - buffer;
+}
+
+
+int sprint_str(char *buffer, char *str) {
+  int i;
+  for (i = 0; str[i] != '\0'; i++) {
+    buffer[i] = str[i];
+  }
+  return i;
+}
+
+int sprint_num(char *buffer, char prefix, int num, char suffix) {
+  int i = 0;
+  char *buf = buffer;
+  int is_neg = 0;
+  if (prefix) {
+    buf[i++] = prefix;
+  }
+  if (num == 0) {
+    buf[i++] = '0';
+  } else {
+    if (num < 0) {
+      num = -num;
+      is_neg = 1;
+    }
+    int s = i;
+    while (num != 0) {
+      buf[i++] = '0' + (num % 10);
+      num = num / 10;
+    }
+    if (is_neg) {
+      buf[i++] = '-';
+    }
+    int e = i - 1;
+    while (s < e) {
+      int t = buf[s];
+      buf[s] = buf[e];
+      buf[e] = t;
+      s ++;
+      e --;
+    }
+  }
+  if (suffix) {
+    buf[i++] = suffix;
+  }
+  return i;
 }
 
 int print_reference_frame(char *buffer) {
@@ -263,21 +309,22 @@ int print_reference_frame(char *buffer) {
   const int mi_cols = analyzer_data.mi_cols;
   char *buf = buffer;
   int r, c;
-  buf += sprintf(buf, "  \"referenceFrameMap\": [");
+  buf += sprint_str(buf, "  \"referenceFrameMap\": [");
   buf += print_list(buf, refs_map);
-  buf += sprintf(buf, "],\n");
-  buf += sprintf(buf, "  \"%s\": [", "referenceFrame");
+  buf += sprint_str(buf, "],\n");
+  buf += sprint_str(buf, "  \"referenceFrame\": [");
   for (r = 0; r < mi_rows; ++r) {
-    buf += sprintf(buf, "[");
+    *(buf ++) = '[';
     for (c = 0; c < mi_cols; ++c) {
       AnalyzerMI *mi = &analyzer_data.mi_grid.buffer[r * mi_cols + c];
-      if (c) buf += sprintf(buf, ",");
-      buf += sprintf(buf, "[%d, %d]", mi->mv_reference_frame[0], mi->mv_reference_frame[1]);
+      if (c) *(buf ++) = ',';
+      buf += sprint_num(buf, '[', mi->mv_reference_frame[0], 0);
+      buf += sprint_num(buf, ',', mi->mv_reference_frame[1], ']');
     }
-    buf += sprintf(buf, "]");
-    if (r < mi_rows - 1) buf += sprintf(buf, ",");
+     *(buf ++) = ']';
+    if (r < mi_rows - 1) *(buf ++) = ',';
   }
-  buf += sprintf(buf, "],\n");
+  buf += sprint_str(buf, "],\n");
   return buf - buffer;
 }
 
@@ -286,18 +333,21 @@ int print_motion_vectors(char *buffer) {
   const int mi_cols = analyzer_data.mi_cols;
   char *buf = buffer;
   int r, c;
-  buf += sprintf(buf, "  \"%s\": [", "motionVectors");
+  buf += sprint_str(buf, "  \"motionVectors\": [");
   for (r = 0; r < mi_rows; ++r) {
-    buf += sprintf(buf, "[");
+    *(buf ++) = '[';
     for (c = 0; c < mi_cols; ++c) {
       AnalyzerMI *mi = &analyzer_data.mi_grid.buffer[r * mi_cols + c];
-      if (c) buf += sprintf(buf, ",");
-      buf += sprintf(buf, "[%d,%d,%d,%d]", mi->mv[0].col, mi->mv[0].row, mi->mv[1].col, mi->mv[1].row);
+      if (c) *(buf ++) = ',';
+      buf += sprint_num(buf, '[', mi->mv[0].col, 0);
+      buf += sprint_num(buf, ',', mi->mv[0].row, 0);
+      buf += sprint_num(buf, ',', mi->mv[1].col, 0);
+      buf += sprint_num(buf, ',', mi->mv[1].row, ']');
     }
-    buf += sprintf(buf, "]");
-    if (r < mi_rows - 1) buf += sprintf(buf, ",");
+    *(buf ++) = ']';
+    if (r < mi_rows - 1) *(buf ++) = ',';
   }
-  buf += sprintf(buf, "],\n");
+  buf += sprint_str(buf, "],\n");
   return buf - buffer;
 }
 int print_block_info(char *buffer, const char **map, const char *name,
@@ -309,21 +359,21 @@ int print_block_info(char *buffer, const char **map, const char *name,
   if (map) {
     buf += sprintf(buf, "  \"%sMap\": [", name);
     buf += print_list(buf, map);
-    buf += sprintf(buf, "],\n");
+    buf += sprint_str(buf, "],\n");
   }
   buf += sprintf(buf, "  \"%s\": [", name);
   for (r = 0; r < mi_rows; ++r) {
-    buf += sprintf(buf, "[");
+    *(buf ++) = '[';
     for (c = 0; c < mi_cols; ++c) {
       AnalyzerMI *mi = &analyzer_data.mi_grid.buffer[r * mi_cols + c];
       v = *(((int8_t *)mi) + offset);
-      if (c) buf += sprintf(buf, ",");
-      buf += sprintf(buf, "%d", v);
+      if (c) *(buf ++) = ',';
+      buf += sprint_num(buf, 0, v, 0);
     }
-    buf += sprintf(buf, "]");
-    if (r < mi_rows - 1) buf += sprintf(buf, ",");
+    *(buf ++) = ']';
+    if (r < mi_rows - 1) *(buf ++) = ',';
   }
-  buf += sprintf(buf, "],\n");
+  buf += sprint_str(buf, "],\n");
   return buf - buffer;
 }
 
@@ -334,13 +384,13 @@ int print_accounting(char *buffer) {
   const Accounting *accounting = analyzer_data.accounting;
   const int num_syms = accounting->syms.num_syms;
   const int num_strs = accounting->syms.dictionary.num_strs;
-  buf += sprintf(buf, "  \"symbolsMap\": [");
+  buf += sprint_str(buf, "  \"symbolsMap\": [");
   for (i = 0; i < num_strs; i++) {
     buf += sprintf(buf, "\"%s\"", accounting->syms.dictionary.strs[i]);
-    if (i < num_strs - 1) buf += sprintf(buf, ",");
+    if (i < num_strs - 1) *(buf ++) = ',';
   }
-  buf += sprintf(buf, "],\n");
-  buf += sprintf(buf, "  \"symbols\": [\n    ");
+  buf += sprint_str(buf, "],\n");
+  buf += sprint_str(buf, "  \"symbols\": [\n    ");
   AccountingSymbolContext context;
   context.x = -2;
   context.y = -2;
@@ -348,14 +398,17 @@ int print_accounting(char *buffer) {
   for (i = 0; i < num_syms; i++) {
     sym = &accounting->syms.syms[i];
     if (memcmp(&context, &sym->context, sizeof(AccountingSymbolContext)) != 0) {
-      buf += sprintf(buf, "[%d,%d]", sym->context.x, sym->context.y);
+      buf += sprint_num(buf, '[', sym->context.x, 0);
+      buf += sprint_num(buf, ',', sym->context.y, ']');
     } else {
-      buf += sprintf(buf, "[%d,%d,%d]", sym->id, sym->bits, sym->samples);
+      buf += sprint_num(buf, '[', sym->id, 0);
+      buf += sprint_num(buf, ',', sym->bits, 0);
+      buf += sprint_num(buf, ',', sym->samples, ']');
     }
     context = sym->context;
-    if (i < num_syms - 1) buf += sprintf(buf, ",");
+    if (i < num_syms - 1) *(buf ++) = ',';
   }
-  buf += sprintf(buf, "],\n");
+  buf += sprint_str(buf, "],\n");
   return buf - buffer;
 }
 #endif
@@ -366,7 +419,7 @@ void on_frame_decoded() {
   char *buf = buffer;
 
   aom_codec_control(&codec, ANALYZER_SET_DATA, &analyzer_data);
-  buf += sprintf(buf, "{\n");
+  buf += sprint_str(buf, "{\n");
   if (layers & BLOCK_SIZE_LAYER)
     buf += print_block_info(buf, block_size_map, "blockSize",
                             offsetof(AnalyzerMI, block_size));
@@ -398,7 +451,8 @@ void on_frame_decoded() {
   buf += sprintf(buf, "  \"frameType\": %d,\n", analyzer_data.frame_type);
   buf += sprintf(buf, "  \"baseQIndex\": %d\n", analyzer_data.base_qindex);
   decoded_frame_count++;
-  buf += sprintf(buf, "},\n");
+  buf += sprint_str(buf, "},\n");
+  *(buf ++) = 0;
   on_frame_decoded_dump(buffer);
   aom_free(buffer);
 }
