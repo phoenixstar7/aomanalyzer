@@ -504,6 +504,9 @@ int read_frame() {
 }
 
 EMSCRIPTEN_KEEPALIVE
+const char *get_aom_codec_build_config() { return aom_codec_build_config(); }
+
+EMSCRIPTEN_KEEPALIVE
 int get_bit_depth() { return img->bit_depth; }
 
 EMSCRIPTEN_KEEPALIVE
