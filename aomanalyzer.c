@@ -51,9 +51,10 @@ typedef enum {
   SKIP_LAYER = 1 << 5,
   FILTER_LAYER = 1 << 6,
   DERING_GAIN_LAYER = 1 << 7,
-  REFERENCE_FRAME_LAYER = 1 << 8,
-  MOTION_VECTORS_LAYER = 1 << 9,
-  ALL_LAYERS = (1 << 10) - 1
+  CLPF_LAYER = 1 << 8,
+  REFERENCE_FRAME_LAYER = 1 << 9,
+  MOTION_VECTORS_LAYER = 1 << 10,
+  ALL_LAYERS = (1 << 11) - 1
 } LayerType;
 
 static LayerType layers = 0;  // ALL_LAYERS;
@@ -80,6 +81,8 @@ static const arg_def_t dump_filter_arg =
     ARG_DEF("f", "filter", 0, "Dump Filter");
 static const arg_def_t dump_dering_gain_arg =
     ARG_DEF("d", "dering", 0, "Dump Dering Gain");
+static const arg_def_t dump_clpf_arg =
+    ARG_DEF("cl", "clpf", 0, "Dump CLPF");
 static const arg_def_t dump_reference_frame_arg =
     ARG_DEF("r", "referenceFrame", 0, "Dump Reference Frame");
 static const arg_def_t pretty_arg =
@@ -98,6 +101,7 @@ static const arg_def_t *main_args[] = { &limit_arg,
                                         &dump_skip_arg,
                                         &dump_filter_arg,
                                         &dump_dering_gain_arg,
+                                        &dump_clpf_arg,
                                         &dump_reference_frame_arg,
                                         &dump_motion_vectors_arg,
                                         &usage_arg,
@@ -439,6 +443,11 @@ void on_frame_decoded() {
   if (layers & DERING_GAIN_LAYER)
     buf += print_block_info(buf, NULL, "deringGain",
                             offsetof(AnalyzerMI, dering_gain));
+  if (layers & CLPF_LAYER)
+    buf += print_block_info(buf, NULL, "clpf",
+                            offsetof(AnalyzerMI, clpf));
+    buf += sprintf(buf, "  \"clpfStrengthY\": %d,\n", analyzer_data.clpf_strength_y);
+    buf += sprintf(buf, "  \"clpfSize\": %d,\n", analyzer_data.clpf_size);
   if (layers & MOTION_VECTORS_LAYER)
     buf += print_motion_vectors(buf);
   if (layers & REFERENCE_FRAME_LAYER)
@@ -549,6 +558,8 @@ static void parse_args(char **argv) {
       layers |= FILTER_LAYER;
     else if (arg_match(&arg, &dump_dering_gain_arg, argi))
       layers |= DERING_GAIN_LAYER;
+    else if (arg_match(&arg, &dump_clpf_arg, argi))
+      layers |= CLPF_LAYER;
     else if (arg_match(&arg, &dump_reference_frame_arg, argi))
       layers |= REFERENCE_FRAME_LAYER;
     else if (arg_match(&arg, &dump_motion_vectors_arg, argi))

@@ -4972,7 +4972,6 @@ void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
                      AOM_PLANE_V, NULL);
     }
   }
-  if (cm->clpf_blocks) aom_free(cm->clpf_blocks);
 #endif
 
   if (!xd->corrupted) {
@@ -4997,7 +4996,11 @@ void av1_decode_frame(AV1Decoder *pbi, const uint8_t *data,
 
 #if CONFIG_ANALYZER
   analyzer_record_frame(pbi);
-#endif  // CONFIG_DERING
+#endif  // CONFIG_ANALYZER
+
+#if CONFIG_CLPF
+  if (cm->clpf_blocks) aom_free(cm->clpf_blocks);
+#endif
 
   // Non frame parallel update frame context here.
   if (!cm->error_resilient_mode && !context_updated)

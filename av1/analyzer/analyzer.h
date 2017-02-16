@@ -30,6 +30,7 @@ typedef struct AnalyzerMI {
   int8_t mode;
   int8_t dering_gain;
   int8_t skip;
+  int8_t clpf;
   int8_t block_size;
   int8_t segment_id;
   int8_t transform_type;
@@ -58,6 +59,7 @@ typedef struct AnalyzerData {
   int mi_cols;
   int tile_rows_log2;
   int tile_cols_log2;
+  int clpf_size;
   int clpf_strength_y;
   int dering_level;
   int y_dequant[ANALYZER_MAX_SEGMENTS][2];

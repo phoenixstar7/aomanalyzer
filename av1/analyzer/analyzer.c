@@ -12,6 +12,10 @@
 #include "../common/blockd.h"
 #include "../common/onyxc_int.h"
 
+#if CONFIG_CLPF
+#include "../common/clpf.h"
+#endif
+
 // Saves the decoder state.
 AnalyzerError analyzer_record_frame(struct AV1Decoder *pbi) {
   AV1_COMMON *const cm = &pbi->common;
@@ -33,6 +37,7 @@ AnalyzerError analyzer_record_frame(struct AV1Decoder *pbi) {
   analyzer_data->accounting = &pbi->accounting;
 #endif
 #if CONFIG_CLPF
+  analyzer_data->clpf_size = cm->clpf_size;
   analyzer_data->clpf_strength_y = cm->clpf_strength_y;
 #endif
 #if CONFIG_DERING
@@ -70,6 +75,12 @@ AnalyzerError analyzer_record_frame(struct AV1Decoder *pbi) {
         mi->mode = mbmi->mode;
         // Deringing Gain
         mi->dering_gain = mbmi->dering_gain;
+#if CONFIG_CLPF
+        // CLPF
+        int clpf_r = r >> (MIN_FB_SIZE_LOG2 - MI_SIZE_LOG2);
+        int clpf_c = c >> (MIN_FB_SIZE_LOG2 - MI_SIZE_LOG2);
+        mi->clpf = cm->clpf_blocks[clpf_r * cm->clpf_stride + clpf_c];
+#endif
         // Block size
         mi->block_size = mbmi->sb_type;
         // Skip flag
